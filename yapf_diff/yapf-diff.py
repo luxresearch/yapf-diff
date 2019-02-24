@@ -51,7 +51,18 @@ class LineRange(list):
     super().__init__([self.start, self.end])
 
 
-def parseLine(line: str) -> Union[None, File, LineRange]:
+def parseLine(line) -> Union[None, File, LineRange]:
+  """Parse a line from a combined diff as a file, chunk range, or ignored.
+  See https://git-scm.com/docs/git-diff#_combined_diff_format for details on
+  combined diffs.
+
+  Args:
+      line (str): a line from a combined diff.
+
+  Returns:
+      a File, a LineRange, or None.
+
+  """
   if line[0:6] == '+++ b/':  # it's a filename
     return File(line)
   elif line[0:3] == '@@ ':  # it's a range
@@ -59,6 +70,16 @@ def parseLine(line: str) -> Union[None, File, LineRange]:
 
 
 def parseUnifiedDiff(diff):
+  """Gather the files and their post-image modified lines from a combined diff.
+
+  Args:
+      diff (str): A combined diff output by `git diff`. See
+        https://git-scm.com/docs/git-diff#_combined_diff_format
+
+  Returns:
+      A list of `File`s.
+
+  """
   files = []
   for line in diff:
     parsed = parseLine(line)
@@ -70,6 +91,13 @@ def parseUnifiedDiff(diff):
 
 
 def main(*, verbose: bool = False, diff_args: Optional[List[str]] = []):
+  """Short summary.
+
+  Args:
+      verbose (bool): Whether to print
+      diff_args (Optional[List[str]]): arguments for git diff.
+
+  """
   files = parseUnifiedDiff(
       sys.stdin or run('git diff {}'.format(diff_args.join(' '))).split('\n'))
   for f in files:
