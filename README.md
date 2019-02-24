@@ -30,7 +30,7 @@ python -m yapf-diff --help # print usage
 
 # examples:
 git diff origin/master | python -m yapf-diff --diff
-python -m yapf-diff --from-git-diff="$(git log --merges -n 1)" --diff 
+python -m yapf-diff --from-git-diff="$(git log --merges -n 1)" --diff
 ```
 
 # Credit where credit is due
@@ -38,3 +38,7 @@ This module modifies a function from `pycodestyle`, which is
 under an MIT license. Their license is included within `./src/lib.py`.  Thanks
 to the PyCQA team for doing a much better job at unified diff parsing than my
 initial implementation.  
+
+See also:
+- https://github.com/hayd/pep8radius
+- https://gist.github.com/mwek/59aefeefc812dea39c93c068eb30b491
