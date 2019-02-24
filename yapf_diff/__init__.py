@@ -13,7 +13,7 @@ cli.add_argument(
     action='store_true',
     help='print the yapf args and produced diff')
 cli.add_argument(
-    '-i', '--inplace', action='store_true', help='modify the changed files')
+    '-i', '--in-place', action='store_true', help='modify the changed files')
 cli.add_argument(
     '--from-git-diff',
     nargs='?',
@@ -21,7 +21,7 @@ cli.add_argument(
     help='if used as a flag, this indicates that sdin is from git diff. If used'
     ' as an argument, it indicates a ref against which to call git diff',
     const=True,
-    default=True)   # default ignores absence of the flag
+    default=True)  # default ignores absence of the flag
 
 
 class File(object):
@@ -31,10 +31,13 @@ class File(object):
     self.name = name_line[6:].strip()  # ignoring '+++ b/'
     self.ranges = []
 
-  def format(self, verbose=False, print_diff=True, inplace=True):
+  def format(self, verbose=False, print_diff=True, in_place=True):
     if self.is_py:
       formatted = FormatFile(
-          self.name, lines=self.ranges, print_diff=print_diff, inplace=inplace)
+          self.name,
+          lines=self.ranges,
+          print_diff=print_diff,
+          in_place=in_place)
       if verbose:
         print(formatted[0])
 
@@ -108,7 +111,7 @@ def getDiff(base=''):
 
   """
   if type(base) is bool and base:
-      return sys.stdin
+    return sys.stdin
   elif type(base) is str:
     cmd = ['git', 'diff']
     if base:
@@ -116,7 +119,7 @@ def getDiff(base=''):
     return run(cmd)
 
 
-def main(*, verbose=False, from_git_diff=True):
+def main(argv):
   """Short summary.
 
   Args:
@@ -124,15 +127,17 @@ def main(*, verbose=False, from_git_diff=True):
       diff_args (Optional[List[str]]): arguments for git diff.
 
   """
-  diff = getDiff(from_git_diff)
-  files = parseUnifiedDiff(diff)
-  for f in files:
-    if f.is_py:
-      f.format(verbose)
+  args = cli.parse(argv)
+  if args.from_git_diff:
+    os.chdir(run('git rev-parse --show-toplevel'.split()).strip())
+    diff = getDiff(args.from_git_diff)
+    files = parseUnifiedDiff(diff)
+    for f in files:
+      if f.is_py:
+        f.format(verbose=(not args.inplace), print_diff=args.diff)
+  else:
+    sys.exit(1)
 
 
 if __name__ == '__main__':
-  os.chdir(run('git rev-parse --show-toplevel'.split()).strip())
-  program_arguments = cli.parse_args(sys.argv)
-  main(verbose=program_arguments.verbose,
-       diff_args=program_arguments.from_git_diff)
+  main(sys.argv)
