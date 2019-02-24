@@ -9,13 +9,20 @@ from yapf.yapflib.yapf_api import FormatFile  # auto-detects configuration
 
 cli = argparse.ArgumentParser(description='format only changed lines')
 cli.add_argument(
-    '--verbose',
-    '-v',
+    '-d',
+    '--diff',
     action='store_true',
     help='print the yapf args and produced diff')
 cli.add_argument(
-    '--dry-run', action='store_true', help='don\'t modify the changed files')
-cli.add_argument('rest', nargs='*', help='positional parameters for `git diff`')
+    '-i', '--inplace', action='store_true', help='modify the changed files')
+cli.add_argument(  # ignored; intended for compatibility with yapf
+    '--from-git-diff',
+    nargs='?',
+    action='store',
+    help='if used as a flag, this indicates that sdin is from git diff. If used'
+    ' as an argument, it indicates a ref against which to call git diff',
+    const=True,
+    default=True)
 
 
 def run(cmd):
@@ -27,14 +34,17 @@ def run(cmd):
 class File(object):
 
   def __init__(self, name_line: str):
-    self.isPy = name_line.strip()[-3:] == '.py'
+    self.is_py = name_line.strip()[-3:] == '.py'
     self.name = name_line[6:].strip()  # ignoring '+++ b/'
     self.ranges = []
 
-  def format(self, verbose: bool = False, dry_run: bool = False):
-    if self.isPy:
+  def format(self,
+             verbose: bool = False,
+             print_diff: bool = True,
+             inplace: bool = True):
+    if self.is_py:
       formatted = FormatFile(
-          self.name, lines=self.ranges, print_diff=True, inplace=(not dry_run))
+          self.name, lines=self.ranges, print_diff=print_diff, inplace=inplace)
       if verbose:
         print(formatted[0])
 
@@ -101,14 +111,14 @@ def main(*, verbose: bool = False, diff_args: Optional[List[str]] = []):
   files = parseUnifiedDiff(
       sys.stdin or run('git diff {}'.format(diff_args.join(' '))).split('\n'))
   for f in files:
-    if f.isPy:
+    if f.is_py:
       f.format(verbose)
 
 
 if __name__ == '__main__':
   os.chdir(run('git rev-parse --show-toplevel'))
   program_arguments = cli.parse_args(sys.argv)
-  main(
-      verbose=program_arguments.verbose,
-      diff_args=(program_arguments.diff_args
-                 if 'diff_args' in program_arguments else []))
+  diff_args = (
+      program_arguments.from_git_diff
+      if type(program_arguments.from_git_diff) is str else [])
+  main(verbose=program_arguments.verbose, diff_args=diff_args)
