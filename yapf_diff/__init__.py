@@ -19,6 +19,7 @@ cli.add_argument(
 cli.add_argument(
     '--from-git-diff',
     nargs='?',
+    metavar='BASE_REF',
     action='store',
     help='if used as a flag, this indicates that sdin is from git diff. If used'
     ' as an argument, it indicates a ref against which to call git diff',
