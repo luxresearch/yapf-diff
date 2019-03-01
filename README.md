@@ -1,7 +1,7 @@
 # yapf_diff
 > change only what was changed
 
-# install via pipenv
+# install via `pipenv`
 
 ```{sh}
 pipenv install git+https://github.com/skalt/yapf-diff.git@master#egg=yapf-diff
@@ -11,9 +11,19 @@ pipenv install git+https://github.com/skalt/yapf-diff.git@master#egg=yapf-diff
 # requirements.txt: for a fast download
 https://github.com/skalt/yapf-diff/archive/master.tar.gz
 ```
+# should I use `yapf_diff`?
+Only if formatting all the lines in your file(s) would cause an unacceptably big diff in your revision history.
+
+- if you're the the one choosing how and when to lint, choose [`black`](https://github.com/ambv/black) for consistency and speed.
+- if formatting entire file at a time is an option, use something like
+
+```bash
+git diff --name-only | xargs yapf
+```
+
 # usage
 
-```
+```bash
 python -m yapf-diff --help # print usage
 # usage: -m [-h] [-d] [-i] [--from-git-diff [BASE_REF]]
 #
@@ -34,10 +44,9 @@ python -m yapf-diff --from-git-diff="$(git log --merges -n 1)" --diff
 ```
 
 # Credit where credit is due
-This module modifies a function from `pycodestyle`, which is
-under an MIT license. Their license is included within `./src/lib.py`.  Thanks
-to the PyCQA team for doing a much better job at unified diff parsing than my
-initial implementation.  
+This module modifies a function from `pycodestyle`, which is under an MIT license.
+Their license is included within `./src/lib.py`.
+Thanks to the PyCQA team for doing a much better job at unified diff parsing than my initial implementation.  
 
 See also:
 - https://github.com/hayd/pep8radius
