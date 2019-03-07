@@ -17,6 +17,6 @@ setup(name='yapf-diff',
       license='MIT',
       install_requires=['setuptools'],
       tests_require=['unittest'],
-      packages=['flask_webpack'],
+      packages=['yapf_diff'],
       zip_safe=False,
       data_files=[])
