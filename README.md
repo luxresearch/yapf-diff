@@ -34,7 +34,7 @@ python -m yapf-diff --help # print usage
 #   -d, --diff            print the yapf args and produced diff
 #   -i, --in-place        modify the changed files
 #   --from-git-diff [BASE_REF]
-#                         if used as a flag, this indicates that sdin is from
+#                         if used as a flag, this indicates that stdin is from
 #                         git diff. If used as an argument, it indicates a ref
 #                         against which to call git diff
 
