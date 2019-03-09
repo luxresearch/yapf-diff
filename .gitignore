@@ -1,3 +1,5 @@
 .cache
 *.pyc
 temp*
+.pytest_cache
+__pycache__

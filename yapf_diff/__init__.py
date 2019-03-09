@@ -21,8 +21,8 @@ cli.add_argument(
     nargs='?',
     metavar='BASE_REF',
     action='store',
-    help='if used as a flag, this indicates that stdin is from git diff. If used'
-    ' as an argument, it indicates a ref against which to call git diff',
+    help='if used as a flag, this indicates that stdin is from git diff. If'
+    ' used as an argument, it indicates a ref against which to call git diff',
     const=True,
     default=True)  # default ignores absence of the flag
 

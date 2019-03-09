@@ -97,7 +97,6 @@ class TestMain(TestCase):
   @patch('sys.stdin', new_callable=lambda: normal_git_diff)
   @patch('yapf_diff.FormatFile')
   def test_pre_commit(self, mock_formatter, mock_stdin, mock_run, mock_chdir):
-    print(mock_formatter)
     main([])  # should use `git diff`
     mock_chdir.assert_called_with('/path/to/git/dir')
     mock_formatter.assert_any_call(
