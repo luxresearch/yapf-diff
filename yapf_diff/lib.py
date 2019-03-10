@@ -31,24 +31,47 @@
 
 import re
 import os
+# from io import IOBase
+from typing import (
+    # Union,
+    # IO,
+    Dict,
+    List,
+    Tuple,
+    Iterable,
+    # Generator
+)
 HUNK_REGEX = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@.*$')
 
 
-def parseUDiff(diff, parent='.'):
+# def _get_lines(diff: Union[IO[str], str]) -> Generator[str, None, None]:
+#   """Coerce a str/IO diff to an iterable of lines"""
+#   diff_type = type(diff)
+#   if diff_type is str:
+#     result = (i for i in diff.splitlines())
+#   elif issubclass(diff_type, IOBase):  # it's stdin
+#     result = (i.rstrip('\n').rstrip('\r') for i in diff)
+#   return result
+
+
+def parseUDiff(
+    diff: Iterable[str], parent: str = '.'
+) -> Dict[str, List[Tuple[int, int]]]:
     """Return a dictionary of lines modified post after the diff."""
     # For each file of the diff, the entry key is the filename,
     # and the value is a set of row numbers to consider.
-    rv = {}
+    rv = {}  # type: Dict[str, List[Tuple[int, int]]]
     path = nrows = None
-    for line in diff.splitlines():
+    for line in diff:
         if nrows:
             if line[:1] != '-':
                 nrows -= 1
             continue
         if line[:3] == '@@ ':
             hunk_match = HUNK_REGEX.match(line)
-            (row, nrows) = [int(g or '1') for g in hunk_match.groups()]
-            rv[path].append((row, row + nrows))
+            if hunk_match and path:
+              (row, nrows) = [int(g or '1') for g in hunk_match.groups()]
+              rv[path].append((row, row + nrows))
         elif line[:3] == '+++':
             path = line[4:].split('\t', 1)[0]
             # Git diff will use (i)ndex, (w)ork tree, (c)ommit and
