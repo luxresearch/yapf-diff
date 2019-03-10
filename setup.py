@@ -28,6 +28,10 @@ setup(name='yapf-diff',
       install_requires=['setuptools'],
       license='MIT',
       packages=['yapf_diff'],
+      package_data={
+          'yapf_diff': ['py.typed']
+      },
+      include_package_data=True,
       tests_require=['unittest'],
       url='https://github.com/luxresearch/yapf-diff',
       zip_safe=False)
