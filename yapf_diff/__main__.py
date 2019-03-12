@@ -1,4 +1,3 @@
-import sys
-from . import main
+from . import run_main
 if __name__ == '__main__':
-  main(sys.argv)
+  run_main()
