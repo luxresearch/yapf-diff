@@ -3,6 +3,7 @@ from unittest import TestCase
 from unittest.mock import patch
 from yapf_diff.lib import parseUDiff
 from yapf_diff import cli, getDiff, main
+from timeout_decorator import timeout
 
 
 class TestCli(TestCase):
@@ -41,7 +42,7 @@ index ca88001..df9c674 100644
 @@ -1,5 +1,6 @@
  def spam():
    # spam
-+  # eggs
++  #  eggs
    return 'spam'
 
 
@@ -58,7 +59,7 @@ index 2ac86a8..663719d 100644
 @@ -1,3 +1,2 @@
  def spam():
 -
-   pass
+    pass
 '''
 
 
@@ -72,14 +73,12 @@ class TestDiffParsing(TestCase):
         })
 
   def test_io_git_diff(self):
-    self.assertEqual(
-        parseUDiff(
-            i.rstrip('\n').rstrip('\r') for i in StringIO(normal_git_diff)
-        ), {
-            './foo.py': [(1, 3)],
-            './bar.py': [(1, 7), (9, 13)],
-        }
-    )
+    result = parseUDiff(
+        i.rstrip('\n').rstrip('\r') for i in StringIO(normal_git_diff))
+    self.assertEqual(result, {
+        './foo.py': [(1, 3)],
+        './bar.py': [(1, 7), (9, 13)],
+    })
 
 
 class TestGetDiff(TestCase):
@@ -102,40 +101,46 @@ class TestGetDiff(TestCase):
 
 class TestMain(TestCase):
 
-  @patch('os.chdir')
+  @patch('yapf_diff.os.chdir')
   @patch('yapf_diff.run', return_value='/path/to/git/dir')
-  @patch('sys.stdin', new_callable=lambda: StringIO(normal_git_diff))
-  @patch('yapf_diff.FormatFile')
-  def test_pre_commit(self, mock_formatter, mock_stdin, mock_run, mock_chdir):
-    main([])  # defaults; should use `git diff`
-    mock_chdir.assert_called_with('/path/to/git/dir')
-    mock_formatter.assert_any_call(
-        '/path/to/git/dir/foo.py',
-        in_place=False,
-        lines=[(1, 3)],
-        print_diff=False,
-    )
-    mock_formatter.assert_any_call(
-        '/path/to/git/dir/bar.py',
-        lines=[(1, 7), (9, 13)],
-        print_diff=False,
-        in_place=False)
+  @patch('yapf_diff.FormatFile')  # -> mock_formatter
+  @patch('yapf_diff.sys.stdout.write')  # -> mock_stdout
+  def cli(self,
+          mock_stdout,
+          mock_formatter,
+          mock_run,
+          mock_chdir,
+          args=[],
+          stdin=None):
 
-  @patch('os.chdir')
-  @patch('yapf_diff.run', return_value='/path/to/git/dir')
-  @patch('sys.stdin', new_callable=lambda: StringIO(normal_git_diff))
-  @patch('yapf_diff.FormatFile')
-  def test_stdin_io(self, mock_formatter, mock_stdin, mock_run, mock_chdir):
-    main([])  # defaults; should use `git diff`
-    mock_chdir.assert_called_with('/path/to/git/dir')
-    mock_formatter.assert_any_call(
+    def to_mock():
+      return StringIO(stdin or '')
+
+    with patch('yapf_diff.sys.stdin', new_callable=to_mock):
+      exit = timeout(1)(lambda: main(['yapf-diff', *args]))()
+      mock_chdir.assert_called_with('/path/to/git/dir')
+      return exit, mock_formatter, mock_stdout, mock_run
+
+  def test_defaults_no_stdin(self):
+    exit, formatter, stdout, run = self.cli(args=[])
+    # defaults; should look for `git diff` in the stdin
+    stdout.assert_not_called()
+    formatter.assert_not_called()
+    self.assertEqual(exit, 0)
+
+  def test_stdin_io(self):
+    # defaults; should use `git diff` and the stdin
+    exit, formatter, stdout, run = self.cli(stdin=normal_git_diff)
+    formatter.assert_any_call(
         '/path/to/git/dir/foo.py',
         in_place=False,
         lines=[(1, 3)],
         print_diff=False,
     )
-    mock_formatter.assert_any_call(
+    formatter.assert_any_call(
         '/path/to/git/dir/bar.py',
         lines=[(1, 7), (9, 13)],
         print_diff=False,
         in_place=False)
+    stdout.assert_not_called()
+    self.assertEqual(exit, 0, 'should have formatted and exited 0')

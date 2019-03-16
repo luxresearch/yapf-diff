@@ -10,16 +10,11 @@ from typing import (
     # IO,
     Union,
 )
-from yapf.yapflib.yapf_api import (
-    FormatFile
-)
-from yapf.yapflib.file_resources import (
-    IsPythonFile
-)
+from yapf.yapflib.yapf_api import (FormatFile)
+from yapf.yapflib.file_resources import (IsPythonFile)
 from .lib import parseUDiff
 
 __version__ = '0.0.1'
-
 
 cli = argparse.ArgumentParser(description='format only changed lines')
 cli.add_argument(
@@ -45,9 +40,7 @@ def run(cmd: List[str]) -> str:
   process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
   process.wait()
   return '\n'.join(
-      i.decode() if type(i) is bytes else str(i)
-      for i in process.stdout
-  )
+      i.decode() if type(i) is bytes else str(i) for i in process.stdout)
 
 
 def getDiff(base: Union[str, bool] = '') -> Iterable[str]:
@@ -60,7 +53,8 @@ def getDiff(base: Union[str, bool] = '') -> Iterable[str]:
       str: a unified diff or an empty string
   """
   if type(base) is bool and base is True:
-    return (i.rstrip('\n').rstrip('\r') for i in sys.stdin)
+    if not sys.stdin.isatty():
+      return (line.rstrip('\n').rstrip('\r') for line in sys.stdin.readlines())
   elif type(base) is str:
     cmd = ['git', 'diff']
     if base:
@@ -85,14 +79,16 @@ def main(argv: List[str]) -> int:
     changes = parseUDiff(diff, parent=git_root)
     for filename, lines in changes.items():
       if IsPythonFile(filename):
-        FormatFile(
+        results = FormatFile(
             filename, lines=lines, in_place=args.in_place, print_diff=args.diff)
+        if args.diff:
+          sys.stdout.write(str(results[0]) or '')
     return 1 if bool(changes) and bool(args.diff) else 0
   else:
     return 1
 
 
-def run_main():
+def run_main() -> None:
   sys.exit(main(sys.argv))
 
 
