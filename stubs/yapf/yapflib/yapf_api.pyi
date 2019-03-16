@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Tuple
 
 
 def FormatFile(filename: str,
@@ -7,4 +7,4 @@ def FormatFile(filename: str,
                print_diff=False,
                verify=False,
                in_place=False,
-               logger=None) -> None: ...
+               logger=None) -> Tuple[str, str, bool]: ...
