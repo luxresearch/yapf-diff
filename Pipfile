@@ -9,6 +9,9 @@ yapf = "*"
 [dev-packages]
 "flake8" = "*"
 mypy = "*"
+timeout-decorator = "*"
+python-language-server = {extras = ["all"], version = "*"}
+pyls-mypy = "*"
 
 [requires]
 python_version = "3.6"
