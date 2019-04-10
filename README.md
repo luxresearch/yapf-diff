@@ -36,14 +36,14 @@ git diff --name-only | xargs black # or yapf, if you need a custom format
 # usage
 
 ```bash
-python -m yapf-diff --help # print usage
-# usage: -m [-h] [-d] [-i] [--from-git-diff [BASE_REF]]
+# usage: yapf-diff [-h] [-d] [--debug] [-i] [--from-git-diff [BASE_REF]]
 #
 # format only changed lines
 #
 # optional arguments:
 #   -h, --help            show this help message and exit
 #   -d, --diff            print the yapf args and produced diff
+#   --debug               print the style yapf is picking up
 #   -i, --in-place        modify the changed files
 #   --from-git-diff [BASE_REF]
 #                         if used as a flag, this indicates that stdin is from

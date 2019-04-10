@@ -4,6 +4,7 @@ import sys
 import argparse
 import os
 import subprocess
+import json
 from typing import (
     List,
     Iterable,
@@ -11,7 +12,8 @@ from typing import (
     Union,
 )
 from yapf.yapflib.yapf_api import (FormatFile)
-from yapf.yapflib.file_resources import (IsPythonFile)
+from yapf.yapflib.file_resources import (IsPythonFile, GetDefaultStyleForDir)
+from yapf.yapflib.style import (CreateStyleFromConfig)
 from .lib import parseUDiff
 
 __version__ = '0.0.1'
@@ -22,6 +24,8 @@ cli.add_argument(
     '--diff',
     action='store_true',
     help='print the yapf args and produced diff')
+cli.add_argument(
+    '--debug', action='store_true', help='print the style yapf is picking up')
 cli.add_argument(
     '-i', '--in-place', action='store_true', help='modify the changed files')
 cli.add_argument(
@@ -72,15 +76,57 @@ def main(argv: List[str]) -> int:
 
   """
   args = cli.parse_args(argv[1:])
+  if args.debug:
+
+    class SetEncoder(json.JSONEncoder):
+
+      def default(self, obj):
+        if isinstance(obj, set):
+          return [*obj]
+          return json.JSONEncoder.default(self, obj)
+
+    def debug(dirname, cfg, style):
+      print(
+          json.dumps(
+              {
+                  'dirname': dirname,
+                  'cfg_file': cfg,
+                  'style': style,
+              },
+              indent=2,
+              sort_keys=True,
+              cls=SetEncoder))
+  else:
+
+    def debug(*args):
+      pass
+
   if args.from_git_diff:  # should always be true
     git_root = run('git rev-parse --show-toplevel'.split(' ')).strip()
     os.chdir(git_root)
     diff = getDiff(args.from_git_diff)
     changes = parseUDiff(diff, parent=git_root)
+    dir_cache = {}
+    if args.debug:
+      cwd = os.getcwd()
+      cfg = GetDefaultStyleForDir(cwd)
+      debug(cwd, cfg, CreateStyleFromConfig(cfg))
+      print('\n\n')
     for filename, lines in changes.items():
       if IsPythonFile(filename):
+        dirname = os.path.dirname(filename)
+        style = dir_cache.get(dirname)
+        if style is None:
+          cfg = GetDefaultStyleForDir(dirname)
+          style = CreateStyleFromConfig(cfg)
+          debug(dirname, cfg, style)
+          dir_cache[dirname] = style
         results = FormatFile(
-            filename, lines=lines, in_place=args.in_place, print_diff=args.diff)
+            filename,
+            lines=lines,
+            in_place=args.in_place,
+            print_diff=args.diff,
+            style_config=style)
         if args.diff:
           sys.stdout.write(str(results[0]) or '')
     return 1 if bool(changes) and bool(args.diff) else 0
